@@ -18,14 +18,17 @@ Prediction _$PredictionFromJson(Map<String, dynamic> json) {
     ..reference = json['reference'] as String?
     ..structuredFormatting = json['structured_formatting'] == null
         ? null
-        : StructuredFormatting.fromJson(json['structured_formatting'] as Map<String, dynamic>)
+        : StructuredFormatting.fromJson(
+            json['structured_formatting'] as Map<String, dynamic>)
     ..terms = (json['terms'] as List<dynamic>?)
         ?.map((e) => Term.fromJson(e as Map<String, dynamic>))
         .toList()
-    ..types = (json['types'] as List<dynamic>?)?.map((e) => e as String).toList();
+    ..types =
+        (json['types'] as List<dynamic>?)?.map((e) => e as String).toList();
 }
 
-Map<String, dynamic> _$PredictionToJson(Prediction instance) => <String, dynamic>{
+Map<String, dynamic> _$PredictionToJson(Prediction instance) =>
+    <String, dynamic>{
       'description': instance.description,
       'id': instance.id,
       'matched_substrings': instance.matchedSubStrings,

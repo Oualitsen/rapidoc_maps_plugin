@@ -23,7 +23,7 @@ Step _$StepFromJson(Map<String, dynamic> json) {
     ..polyline = json['polyline'] == null
         ? null
         : Polyline.fromJson(json['polyline'] as Map<String, dynamic>)
-    ..HtmlInstructions = json['html_instructions'] as String?
+    ..htmlInstructions = json['html_instructions'] as String?
     ..travelMode = json['travel_mode'] as String?;
 }
 
@@ -33,6 +33,6 @@ Map<String, dynamic> _$StepToJson(Step instance) => <String, dynamic>{
       'start_location': instance.startLocation,
       'end_location': instance.endLocation,
       'polyline': instance.polyline,
-      'html_instructions': instance.HtmlInstructions,
+      'html_instructions': instance.htmlInstructions,
       'travel_mode': instance.travelMode,
     };

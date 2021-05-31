@@ -179,7 +179,7 @@ class MapsState extends State<Maps> {
                               ?..animateCamera(CameraUpdate.newLatLng(
                                   LatLng(position.latitude, position.longitude)));
                           } catch (error) {
-                            print("Could not get location! ${error}");
+                            print("Could not get location! $error");
                           }
                         },
                       ),

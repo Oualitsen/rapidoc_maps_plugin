@@ -18,7 +18,7 @@ class Step {
   Polyline? polyline;
 
   @JsonKey(name: "html_instructions")
-  String? HtmlInstructions;
+  String? htmlInstructions;
 
   @JsonKey(name: "travel_mode")
   String? travelMode;
