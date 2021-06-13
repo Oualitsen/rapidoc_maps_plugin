@@ -337,7 +337,7 @@ packages:
       name: image_picker
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.7.5+3"
+    version: "0.8.0+1"
   image_picker_for_web:
     dependency: transitive
     description:
@@ -358,7 +358,7 @@ packages:
       name: infinite_scroll_list_view
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.0.1"
+    version: "0.0.2"
   io:
     dependency: transitive
     description:
@@ -388,7 +388,7 @@ packages:
     source: hosted
     version: "4.0.1"
   json_serializable:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: json_serializable
       url: "https://pub.dartlang.org"
@@ -516,17 +516,17 @@ packages:
   rapidoc_utils:
     dependency: "direct main"
     description:
-      name: rapidoc_utils
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.0.3"
+      path: "../rapidoc-utils"
+      relative: true
+    source: path
+    version: "0.0.8"
   rxdart:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: rxdart
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.27.0"
+    version: "0.27.1"
   shared_preferences:
     dependency: transitive
     description:
@@ -716,4 +716,4 @@ packages:
     version: "3.1.0"
 sdks:
   dart: ">=2.13.0 <3.0.0"
-  flutter: ">=1.22.0"
+  flutter: ">=2.0.0"

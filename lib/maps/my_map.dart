@@ -1,18 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:rapidoc_maps_plugin/lang/Langs.dart';
 
-final LatLng coordinates = LatLng(0, 0);
-
 class Maps extends StatefulWidget {
-  final Function(LatLng?)? onPlaceSelected;
   final LatLng? initialPosition;
   final double? zoom;
-  final Set<Polyline>? polylines;
-  final Set<Polygon>? polygons;
-  final Set<Marker>? markers;
-  final Set<Circle>? circles;
+  final List<Marker>? markers;
+  final List<Polyline>? polylines;
+  final List<Polygon>? polygons;
+  final List<Circle>? circles;
   final CameraTargetBounds? cameraTargetBounds;
   final Function(LatLng)? onTap;
   final bool myLocationEnabled;
@@ -20,7 +19,6 @@ class Maps extends StatefulWidget {
 
   Maps({
     Key? key,
-    this.onPlaceSelected,
     this.initialPosition,
     this.polylines,
     this.polygons,
@@ -38,25 +36,64 @@ class Maps extends StatefulWidget {
 }
 
 class MapsState extends State<Maps> {
-  GoogleMapController? controller;
+  final Completer<GoogleMapController> _controller = Completer();
 
   late double zoom;
 
   MapType mapType = MapType.normal;
   late LatLng center;
+  final lang = appLocalizationsWrapper.lang;
 
   @override
   void initState() {
     center = widget.initialPosition ?? LatLng(0, 0);
-
     zoom = widget.zoom ?? 0;
-
     super.initState();
   }
 
   @override
+  void dispose() {
+    super.dispose();
+    _controller.future.then((value) => value.dispose());
+  }
+
+  Future<void> animateCamera(CameraUpdate cameraUpdate) async {
+    var ctrl = await _controller.future;
+    return ctrl.animateCamera(cameraUpdate);
+  }
+
+  Future<void> moveCamera(CameraUpdate cameraUpdate) async {
+    var ctrl = await _controller.future;
+    return ctrl.moveCamera(cameraUpdate);
+  }
+
+  Future<LatLng> getLatLng(ScreenCoordinate screenCoordinate) async {
+    var ctrl = await _controller.future;
+    return ctrl.getLatLng(screenCoordinate);
+  }
+
+  Future<LatLngBounds> getVisibleRegion() async {
+    var ctrl = await _controller.future;
+    return ctrl.getVisibleRegion();
+  }
+
+  Future<void> hideMarkerInfoWindow(String markerId) async {
+    var ctrl = await _controller.future;
+    return ctrl.hideMarkerInfoWindow(MarkerId(markerId));
+  }
+
+  Future<bool> isMarkerInfoWindowShown(String markerId) async {
+    var ctrl = await _controller.future;
+    return ctrl.isMarkerInfoWindowShown(MarkerId(markerId));
+  }
+
+  Future<void> showMarkerInfoWindow(String markerId) async {
+    var ctrl = await _controller.future;
+    return ctrl.showMarkerInfoWindow(MarkerId(markerId));
+  }
+
+  @override
   Widget build(BuildContext context) {
-    var lang = appLocalizationsWrapper.lang;
     return Stack(
       fit: StackFit.expand,
       children: <Widget>[
@@ -64,7 +101,7 @@ class MapsState extends State<Maps> {
           zoomControlsEnabled: false,
           zoomGesturesEnabled: true,
           onMapCreated: (controller) async {
-            this.controller = controller;
+            _controller.complete(controller);
           },
           onCameraIdle: () {},
           initialCameraPosition:
@@ -73,10 +110,10 @@ class MapsState extends State<Maps> {
           onCameraMove: (CameraPosition position) {
             center = LatLng(position.target.latitude, position.target.longitude);
           },
-          markers: widget.markers ?? Set.of([]),
-          polygons: widget.polygons ?? Set.of([]),
-          polylines: widget.polylines ?? Set.of([]),
-          circles: widget.circles ?? Set.of([]),
+          markers: Set.of(widget.markers ?? []),
+          polygons: Set.of(widget.polygons ?? []),
+          polylines: Set.of(widget.polylines ?? []),
+          circles: Set.of(widget.circles ?? []),
           onTap: widget.onTap,
           cameraTargetBounds: widget.cameraTargetBounds ?? CameraTargetBounds.unbounded,
           myLocationEnabled: widget.myLocationEnabled,
@@ -125,9 +162,11 @@ class MapsState extends State<Maps> {
                         ),
                       ],
                       child: Icon(Icons.more_horiz),
-                      onSelected: (type) => setState(() {
-                        mapType = type;
-                      }),
+                      onSelected: (type) {
+                        setState(() {
+                          mapType = type;
+                        });
+                      },
                     ),
                   ),
                 ],
@@ -148,19 +187,22 @@ class MapsState extends State<Maps> {
                     children: <Widget>[
                       IconButton(
                         icon: Icon(Icons.zoom_out),
-                        onPressed: () {
+                        onPressed: () async {
+                          var ctrl = await _controller.future;
+
                           setState(() {
                             zoom++;
-                            controller?..animateCamera(CameraUpdate.zoomOut());
+                            ctrl.animateCamera(CameraUpdate.zoomOut());
                           });
                         },
                       ),
                       IconButton(
                         icon: Icon(Icons.zoom_in),
-                        onPressed: () {
+                        onPressed: () async {
+                          var ctrl = await _controller.future;
                           setState(() {
                             zoom--;
-                            controller?..animateCamera(CameraUpdate.zoomIn());
+                            ctrl.animateCamera(CameraUpdate.zoomIn());
                           });
                         },
                       ),
@@ -174,10 +216,9 @@ class MapsState extends State<Maps> {
                                 seconds: 7,
                               ),
                             );
-
-                            controller
-                              ?..animateCamera(CameraUpdate.newLatLng(
-                                  LatLng(position.latitude, position.longitude)));
+                            var ctrl = await _controller.future;
+                            ctrl.animateCamera(CameraUpdate.newLatLng(
+                                LatLng(position.latitude, position.longitude)));
                           } catch (error) {
                             print("Could not get location! $error");
                           }

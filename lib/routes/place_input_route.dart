@@ -1,24 +1,22 @@
 import 'package:flutter_responsive_tools/screen_type_layout.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:infinite_scroll_list_view/infinite_scroll_list_view.dart';
+import 'package:rapidoc_maps_plugin/googleApiModel/LatLng.dart' as model;
 import 'package:rapidoc_maps_plugin/googleApiModel/Prediction.dart';
 import 'package:flutter/material.dart';
 import 'package:rapidoc_maps_plugin/lang/Langs.dart';
 import 'package:rapidoc_maps_plugin/routes/choose_on_map_route.dart';
+import 'package:rapidoc_maps_plugin/services/SearchService.dart';
 import 'package:rapidoc_utils/utils/Utils.dart';
 import 'package:rapidoc_utils/utils/error_handler.dart';
 import 'package:rxdart/rxdart.dart';
 
 class PlaceInputRoute extends StatefulWidget {
-  final Future<List<Prediction>?> Function(String) searchFunction;
-  final Future<String> Function(LatLng) reverseGeocode;
-  final Future<LatLng> Function(String placeId) geocode;
+  final SearchService service;
 
   PlaceInputRoute({
     Key? key,
-    required this.searchFunction,
-    required this.reverseGeocode,
-    required this.geocode,
+    required this.service,
   }) : super(key: key);
 
   @override
@@ -27,8 +25,9 @@ class PlaceInputRoute extends StatefulWidget {
 
 class PlaceInputRouteState extends State<PlaceInputRoute> {
   final BehaviorSubject<String> _searchSubject = BehaviorSubject.seeded("");
-
+  late final SearchService service;
   bool _searching = true;
+  final lang = appLocalizationsWrapper.lang;
 
   final key = GlobalKey<InfiniteScrollListViewState<Prediction>>();
 
@@ -40,6 +39,7 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
 
   @override
   void initState() {
+    service = widget.service;
     _searchSubject
         .debounceTime(Duration(milliseconds: 500))
         .where((e) => key.currentState != null)
@@ -51,7 +51,6 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
 
   @override
   Widget build(BuildContext context) {
-    var lang = appLocalizationsWrapper.lang;
     final String text = ModalRoute.of(context)!.settings.arguments as String? ?? lang.search;
 
     return Scaffold(
@@ -85,7 +84,7 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
   }
 
   Future<Position?> getAddress(Prediction p, BuildContext context) async {
-    var response = await safeCall(widget.geocode(p.placeId!), context);
+    var response = await safeCall(service.geocode(p.placeId!), context);
     if (response != null) {
       return Position(latLng: response, formattedAddress: p.structuredFormatting?.mainText ?? "");
     }
@@ -101,7 +100,7 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
         },
       );
     } else {
-      return Text(appLocalizationsWrapper.lang.search);
+      return Text(lang.search);
     }
   }
 
@@ -132,7 +131,6 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
   }
 
   Widget createHeader(context) {
-    var lang = appLocalizationsWrapper.lang;
     return AutoScreenTypeLayout(
       child: Row(
         children: <Widget>[
@@ -151,11 +149,16 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
                     LatLng latLng = result;
 
                     try {
-                      String address = await widget.reverseGeocode(lang);
+                      String address = await service.reverseGeocode(
+                        model.LatLng(
+                          lat: latLng.latitude,
+                          lng: latLng.longitude,
+                        ),
+                      );
 
                       Navigator.of(context).pop(
                         Position(
-                          latLng: latLng,
+                          latLng: model.LatLng(lat: latLng.latitude, lng: latLng.longitude),
                           formattedAddress: address,
                         ),
                       );
@@ -191,11 +194,16 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
                       pos.longitude,
                     );
 
-                    String address = await widget.reverseGeocode(lang);
+                    String address = await service.reverseGeocode(
+                      model.LatLng(
+                        lat: latLng.latitude,
+                        lng: latLng.longitude,
+                      ),
+                    );
 
                     Navigator.of(context).pop(
                       Position(
-                        latLng: latLng,
+                        latLng: model.LatLng(lat: latLng.latitude, lng: latLng.longitude),
                         formattedAddress: address,
                       ),
                     );
@@ -211,7 +219,7 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
                       SizedBox(
                         height: 5,
                       ),
-                      Text(lang.currentLocation.toUpperCase())
+                      Text(lang.currentPosition.toUpperCase())
                     ],
                   ),
                 ),
@@ -227,7 +235,7 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
     if (pageIndex == 0) {
       var text = _searchSubject.value;
       if (text.isNotEmpty) {
-        widget.searchFunction(text);
+        return service.search(text);
       }
     }
     return Future.value([]);
@@ -235,7 +243,7 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
 }
 
 class Position {
-  final LatLng latLng;
+  final model.LatLng latLng;
   final String formattedAddress;
 
   Position({required this.latLng, required this.formattedAddress});
