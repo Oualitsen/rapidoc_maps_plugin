@@ -1,13 +1,14 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:rapidoc_maps_plugin/lang/Langs.dart';
+import 'package:rapidoc_maps_plugin/lang/langs.dart';
 
 class Maps extends StatefulWidget {
   final LatLng? initialPosition;
-  final double? zoom;
+  final double zoom;
   final List<Marker>? markers;
   final List<Polyline>? polylines;
   final List<Polygon>? polygons;
@@ -16,6 +17,8 @@ class Maps extends StatefulWidget {
   final Function(LatLng)? onTap;
   final bool myLocationEnabled;
   final bool myLocationButtonEnabled;
+  final Function()? onMapsReady;
+  final String langName;
 
   Maps({
     Key? key,
@@ -26,9 +29,11 @@ class Maps extends StatefulWidget {
     this.circles,
     this.onTap,
     this.cameraTargetBounds,
-    this.zoom,
+    this.zoom: 0,
     this.myLocationEnabled: false,
     this.myLocationButtonEnabled: false,
+    this.onMapsReady,
+    this.langName = "en",
   }) : super(key: key);
 
   @override
@@ -38,16 +43,15 @@ class Maps extends StatefulWidget {
 class MapsState extends State<Maps> {
   final Completer<GoogleMapController> _controller = Completer();
 
-  late double zoom;
-
   MapType mapType = MapType.normal;
   late LatLng center;
-  final lang = appLocalizationsWrapper.lang;
+  late final Lang lang;
+  bool _mapsReady = false;
 
   @override
   void initState() {
+    lang = findLangByName(widget.langName);
     center = widget.initialPosition ?? LatLng(0, 0);
-    zoom = widget.zoom ?? 0;
     super.initState();
   }
 
@@ -55,6 +59,11 @@ class MapsState extends State<Maps> {
   void dispose() {
     super.dispose();
     _controller.future.then((value) => value.dispose());
+  }
+
+  Future<double> getZoomLevel() async {
+    var ctrl = await _controller.future;
+    return ctrl.getZoomLevel();
   }
 
   Future<void> animateCamera(CameraUpdate cameraUpdate) async {
@@ -92,6 +101,23 @@ class MapsState extends State<Maps> {
     return ctrl.showMarkerInfoWindow(MarkerId(markerId));
   }
 
+  static LatLngBounds createBounds(LatLng southwest, LatLng northeast) {
+    final points = [southwest, northeast];
+
+    final highestLat = points.map((e) => e.latitude).reduce(max);
+    final highestLong = points.map((e) => e.longitude).reduce(max);
+    final lowestLat = points.map((e) => e.latitude).reduce(min);
+    final lowestLong = points.map((e) => e.longitude).reduce(min);
+
+    final lowestLatLowestLong = LatLng(lowestLat, lowestLong);
+    final highestLatHighestLong = LatLng(highestLat, highestLong);
+
+    return LatLngBounds(
+        southwest: lowestLatLowestLong, northeast: highestLatHighestLong);
+  }
+
+  bool get isMapsReady => _mapsReady;
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -102,20 +128,27 @@ class MapsState extends State<Maps> {
           zoomGesturesEnabled: true,
           onMapCreated: (controller) async {
             _controller.complete(controller);
+            _mapsReady = true;
+            if (widget.onMapsReady != null) {
+              widget.onMapsReady!();
+            }
           },
           onCameraIdle: () {},
-          initialCameraPosition:
-              CameraPosition(target: LatLng(center.latitude, center.longitude), zoom: zoom),
+          initialCameraPosition: CameraPosition(
+              target: LatLng(center.latitude, center.longitude),
+              zoom: widget.zoom),
           mapType: mapType,
           onCameraMove: (CameraPosition position) {
-            center = LatLng(position.target.latitude, position.target.longitude);
+            center =
+                LatLng(position.target.latitude, position.target.longitude);
           },
           markers: Set.of(widget.markers ?? []),
           polygons: Set.of(widget.polygons ?? []),
           polylines: Set.of(widget.polylines ?? []),
           circles: Set.of(widget.circles ?? []),
           onTap: widget.onTap,
-          cameraTargetBounds: widget.cameraTargetBounds ?? CameraTargetBounds.unbounded,
+          cameraTargetBounds:
+              widget.cameraTargetBounds ?? CameraTargetBounds.unbounded,
           myLocationEnabled: widget.myLocationEnabled,
           myLocationButtonEnabled: widget.myLocationButtonEnabled,
         ),
@@ -191,7 +224,6 @@ class MapsState extends State<Maps> {
                           var ctrl = await _controller.future;
 
                           setState(() {
-                            zoom++;
                             ctrl.animateCamera(CameraUpdate.zoomOut());
                           });
                         },
@@ -201,7 +233,6 @@ class MapsState extends State<Maps> {
                         onPressed: () async {
                           var ctrl = await _controller.future;
                           setState(() {
-                            zoom--;
                             ctrl.animateCamera(CameraUpdate.zoomIn());
                           });
                         },

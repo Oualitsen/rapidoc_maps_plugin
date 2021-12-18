@@ -1,22 +1,29 @@
+import 'package:dio/dio.dart';
+import 'package:error_handler/error_handler.dart';
 import 'package:flutter_responsive_tools/screen_type_layout.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:infinite_scroll_list_view/infinite_scroll_list_view.dart';
-import 'package:rapidoc_maps_plugin/googleApiModel/LatLng.dart' as model;
-import 'package:rapidoc_maps_plugin/googleApiModel/Prediction.dart';
+import 'package:rapidoc_maps_plugin/model/lat_lng.dart' as model;
+import 'package:rapidoc_maps_plugin/model/prediction.dart';
 import 'package:flutter/material.dart';
-import 'package:rapidoc_maps_plugin/lang/Langs.dart';
+import 'package:rapidoc_maps_plugin/lang/langs.dart';
 import 'package:rapidoc_maps_plugin/routes/choose_on_map_route.dart';
-import 'package:rapidoc_maps_plugin/services/SearchService.dart';
-import 'package:rapidoc_utils/utils/Utils.dart';
-import 'package:rapidoc_utils/utils/error_handler.dart';
+import 'package:rapidoc_maps_plugin/services/search_service.dart';
 import 'package:rxdart/rxdart.dart';
 
 class PlaceInputRoute extends StatefulWidget {
-  final SearchService service;
+  final Dio dio;
+  final String langName;
+
+  /// something like country:dz
+  final String? component;
 
   PlaceInputRoute({
     Key? key,
-    required this.service,
+    required this.dio,
+    this.langName = "en",
+    this.component,
   }) : super(key: key);
 
   @override
@@ -27,22 +34,19 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
   final BehaviorSubject<String> _searchSubject = BehaviorSubject.seeded("");
   late final SearchService service;
   bool _searching = true;
-  final lang = appLocalizationsWrapper.lang;
 
   final key = GlobalKey<InfiniteScrollListViewState<Prediction>>();
 
-  @override
-  void dispose() {
-    _searchSubject.close();
-    super.dispose();
-  }
+  late final Lang lang;
 
   @override
   void initState() {
-    service = widget.service;
+    service = SearchService(widget.dio);
+    lang = findLangByName(widget.langName);
     _searchSubject
         .debounceTime(Duration(milliseconds: 500))
         .where((e) => key.currentState != null)
+        .where((event) => event.isNotEmpty)
         .listen((event) {
       key.currentState!.reload();
     });
@@ -51,7 +55,8 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
 
   @override
   Widget build(BuildContext context) {
-    final String text = ModalRoute.of(context)!.settings.arguments as String? ?? lang.search;
+    final String text =
+        ModalRoute.of(context)!.settings.arguments as String? ?? lang.search;
 
     return Scaffold(
       appBar: AppBar(
@@ -60,19 +65,28 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
       ),
       body: Column(
         children: [
-          createHeader(context),
+          StreamBuilder<String>(
+              stream: _searchSubject,
+              initialData: _searchSubject.valueOrNull,
+              builder: (context, snapshot) {
+                var text = snapshot.data;
+                if (text != null && text.isNotEmpty) {
+                  return SizedBox.shrink();
+                }
+
+                return createHeader(context);
+              }),
           Expanded(
             child: InfiniteScrollListView<Prediction>(
               key: key,
               pageLoader: loadData,
-              elementBuilder: (p, a) => ListTile(
+              elementBuilder: (c, p, i, a) => ListTile(
                 title: Text(p.structuredFormatting?.mainText ?? ""),
                 subtitle: Text(p.structuredFormatting?.secondaryText ?? ""),
-                onTap: () async {
-                  var position = await getAddress(p, context);
-                  if (position != null) {
-                    Navigator.of(context).pop(position);
-                  }
+                onTap: () {
+                  getAddress(p, context)
+                      .asStream()
+                      .listen(Navigator.of(context).pop);
                 },
               ),
               noDataWidget: SizedBox.shrink(),
@@ -83,11 +97,14 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
     );
   }
 
-  Future<Position?> getAddress(Prediction p, BuildContext context) async {
-    var response = await safeCall(service.geocode(p.placeId!), context);
-    if (response != null) {
-      return Position(latLng: response, formattedAddress: p.structuredFormatting?.mainText ?? "");
-    }
+  Future<Position> getAddress(Prediction p, BuildContext context) {
+    return service
+        .geocode(p.placeId!)
+        .asStream()
+        .map((event) => Position(
+            latLng: event,
+            formattedAddress: p.structuredFormatting?.mainText ?? ""))
+        .first;
   }
 
   Widget _buildTitle(BuildContext context, String title) {
@@ -110,6 +127,7 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
         IconButton(
           icon: Icon(Icons.clear),
           onPressed: () {
+            _searchSubject.add("");
             setState(() {
               _searching = false;
             });
@@ -138,34 +156,32 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
             child: Padding(
               padding: const EdgeInsets.all(8.0),
               child: OutlinedButton(
-                onPressed: () async {
-                  var result = await Navigator.of(context).push<LatLng>(
-                    MaterialPageRoute(
-                      builder: (context) => ChooseOnMapRoute(),
-                    ),
-                  );
-
-                  if (result != null) {
-                    LatLng latLng = result;
-
-                    try {
-                      String address = await service.reverseGeocode(
-                        model.LatLng(
-                          lat: latLng.latitude,
-                          lng: latLng.longitude,
+                onPressed: () {
+                  Navigator.of(context)
+                      .push<LatLng>(
+                        MaterialPageRoute(
+                          builder: (context) => ChooseOnMapRoute(),
                         ),
-                      );
-
-                      Navigator.of(context).pop(
-                        Position(
-                          latLng: model.LatLng(lat: latLng.latitude, lng: latLng.longitude),
-                          formattedAddress: address,
-                        ),
-                      );
-                    } catch (error) {
-                      showServerError(context, error: error);
-                    }
-                  }
+                      )
+                      .asStream()
+                      .where((event) => event != null)
+                      .map((event) => event!)
+                      .flatMap(
+                        (latLng) => service
+                            .reverseGeocode([latLng.latitude, latLng.longitude])
+                            .asStream()
+                            .map(
+                              (address) => Position(
+                                latLng: model.LatLng(
+                                    lat: latLng.latitude,
+                                    lng: latLng.longitude),
+                                formattedAddress: address,
+                              ),
+                            ),
+                      )
+                      .doOnError(
+                          (p0, p1) => showServerError(context, error: p0))
+                      .listen(Navigator.of(context).pop);
                 },
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -188,22 +204,23 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
               child: OutlinedButton(
                 onPressed: () async {
                   try {
-                    var pos = await getCurrentPosition();
+                    var pos = await Geolocator.getCurrentPosition(
+                      timeLimit: Duration(
+                        seconds: 10,
+                      ),
+                    );
                     var latLng = LatLng(
                       pos.latitude,
                       pos.longitude,
                     );
 
-                    String address = await service.reverseGeocode(
-                      model.LatLng(
-                        lat: latLng.latitude,
-                        lng: latLng.longitude,
-                      ),
-                    );
+                    String address = await service
+                        .reverseGeocode([latLng.latitude, latLng.longitude]);
 
                     Navigator.of(context).pop(
                       Position(
-                        latLng: model.LatLng(lat: latLng.latitude, lng: latLng.longitude),
+                        latLng: model.LatLng(
+                            lat: latLng.latitude, lng: latLng.longitude),
                         formattedAddress: address,
                       ),
                     );
@@ -229,6 +246,12 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _searchSubject.close();
+    super.dispose();
   }
 
   Future<List<Prediction>?> loadData(int pageIndex) {
