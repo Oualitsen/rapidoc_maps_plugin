@@ -33,7 +33,7 @@ class PlaceInputRoute extends StatefulWidget {
 class PlaceInputRouteState extends State<PlaceInputRoute> {
   final BehaviorSubject<String> _searchSubject = BehaviorSubject.seeded("");
   late final SearchService service;
-  bool _searching = true;
+  final BehaviorSubject<bool> _searching = BehaviorSubject.seeded(true);
 
   final key = GlobalKey<InfiniteScrollListViewState<Prediction>>();
 
@@ -73,7 +73,6 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
                 if (text != null && text.isNotEmpty) {
                   return SizedBox.shrink();
                 }
-
                 return createHeader(context);
               }),
           Expanded(
@@ -108,44 +107,51 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
   }
 
   Widget _buildTitle(BuildContext context, String title) {
-    if (_searching) {
-      return TextField(
-        autofocus: true,
-        decoration: InputDecoration(border: InputBorder.none, hintText: title),
-        onChanged: (text) {
-          _searchSubject.add(text);
-        },
-      );
-    } else {
-      return Text(lang.search);
-    }
+    return StreamBuilder<bool>(
+      stream: _searching,
+      initialData: _searching.value,
+      builder: (context, snapshot) {
+        var __searching = snapshot.data ?? false;
+        if (__searching) {
+          return TextField(
+            autofocus: true,
+            decoration:
+                InputDecoration(border: InputBorder.none, hintText: title),
+            onChanged: (text) {
+              _searchSubject.add(text);
+            },
+          );
+        } else {
+          return Text(lang.search);
+        }
+      },
+    );
   }
 
   List<Widget> _buildActions(BuildContext context) {
-    if (_searching) {
-      return [
-        IconButton(
-          icon: Icon(Icons.clear),
-          onPressed: () {
-            _searchSubject.add("");
-            setState(() {
-              _searching = false;
-            });
-          },
-        )
-      ];
-    } else {
-      return [
-        IconButton(
-          icon: Icon(Icons.search),
-          onPressed: () {
-            setState(() {
-              _searching = true;
-            });
-          },
-        )
-      ];
-    }
+    return [
+      StreamBuilder<bool>(
+        builder: (context, snapshot) {
+          var __searching = snapshot.data ?? false;
+          if (__searching) {
+            return IconButton(
+              icon: Icon(Icons.clear),
+              onPressed: () {
+                _searchSubject.add("");
+                _searching.add(false);
+              },
+            );
+          } else {
+            return IconButton(
+              icon: Icon(Icons.search),
+              onPressed: () => _searching.add(true),
+            );
+          }
+        },
+        initialData: _searching.value,
+        stream: _searching,
+      )
+    ];
   }
 
   Widget createHeader(context) {
@@ -203,30 +209,14 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
               padding: const EdgeInsets.all(8.0),
               child: OutlinedButton(
                 onPressed: () async {
-                  try {
-                    var pos = await Geolocator.getCurrentPosition(
-                      timeLimit: Duration(
-                        seconds: 10,
-                      ),
-                    );
-                    var latLng = LatLng(
-                      pos.latitude,
-                      pos.longitude,
-                    );
-
-                    String address = await service
-                        .reverseGeocode([latLng.latitude, latLng.longitude]);
-
-                    Navigator.of(context).pop(
-                      Position(
-                        latLng: model.LatLng(
-                            lat: latLng.latitude, lng: latLng.longitude),
-                        formattedAddress: address,
-                      ),
-                    );
-                  } catch (error) {
-                    showServerError(context, error: error);
-                  }
+                  Geolocator.getCurrentPosition(
+                          timeLimit: Duration(seconds: 10))
+                      .asStream()
+                      .asyncMap((latLng) => service
+                          .reverseGeocode([latLng.latitude, latLng.longitude]))
+                      .doOnError(
+                          (p0, p1) => showServerError(context, error: p0))
+                      .listen((text) => Navigator.of(context).pop(text));
                 },
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -251,6 +241,7 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
   @override
   void dispose() {
     _searchSubject.close();
+    _searching.close();
     super.dispose();
   }
 
@@ -258,7 +249,8 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
     if (pageIndex == 0) {
       var text = _searchSubject.value;
       if (text.isNotEmpty) {
-        return service.search(text);
+        return service.search(text,
+            lang: widget.langName, component: widget.component);
       }
     }
     return Future.value([]);
