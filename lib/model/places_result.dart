@@ -6,7 +6,7 @@ part 'places_result.g.dart';
 
 @JsonSerializable()
 class PlacesResult {
-  @JsonKey(defaultValue: const [])
+  @JsonKey(defaultValue: [])
   List<Prediction> predictions = [];
   ResponseStatus? status;
 

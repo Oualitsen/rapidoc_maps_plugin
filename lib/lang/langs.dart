@@ -26,25 +26,43 @@ class Lang {
 }
 
 class _French extends Lang {
+  @override
   String get mapNormal => "Normal";
+  @override
   String get mapTerrain => "Terrain";
+  @override
   String get mapHybrid => "Hybride";
+  @override
   String get mapSatellite => "Satellite";
+  @override
   String get cancel => "Annuler";
+  @override
   String get search => "Recherche";
+  @override
   String get chooseOnMap => "Choisir sur carte";
+  @override
   String get currentPosition => "Position actuelle";
+  @override
   String get selectThisPosition => "Choisir cette position";
 }
 
 class _Arabic extends Lang {
+  @override
   String get mapNormal => "عادي";
+  @override
   String get mapTerrain => "تضاريس";
+  @override
   String get mapHybrid => "هجين";
+  @override
   String get mapSatellite => "الأقمار الصناعية";
+  @override
   String get cancel => "إلغاء";
+  @override
   String get search => "بحث";
+  @override
   String get chooseOnMap => "اختر على الخريطة";
+  @override
   String get currentPosition => "النقطة الحالية";
+  @override
   String get selectThisPosition => "إختيار النقطة الحالية";
 }

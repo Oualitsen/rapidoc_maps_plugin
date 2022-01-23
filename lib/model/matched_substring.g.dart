@@ -6,11 +6,10 @@ part of 'matched_substring.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-MatchedSubstring _$MatchedSubstringFromJson(Map<String, dynamic> json) {
-  return MatchedSubstring()
-    ..length = json['length'] as int
-    ..offset = json['offset'] as int;
-}
+MatchedSubstring _$MatchedSubstringFromJson(Map<String, dynamic> json) =>
+    MatchedSubstring()
+      ..length = json['length'] as int
+      ..offset = json['offset'] as int;
 
 Map<String, dynamic> _$MatchedSubstringToJson(MatchedSubstring instance) =>
     <String, dynamic>{

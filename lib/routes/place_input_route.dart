@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
-import 'package:error_handler/error_handler.dart';
 import 'package:flutter_responsive_tools/screen_type_layout.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http_error_handler/error_handler.dart';
 import 'package:infinite_scroll_list_view/infinite_scroll_list_view.dart';
 import 'package:rapidoc_maps_plugin/model/lat_lng.dart' as model;
 import 'package:rapidoc_maps_plugin/model/prediction.dart';
@@ -19,7 +19,7 @@ class PlaceInputRoute extends StatefulWidget {
   /// something like country:dz
   final String? component;
 
-  PlaceInputRoute({
+  const PlaceInputRoute({
     Key? key,
     required this.dio,
     this.langName = "en",
@@ -44,7 +44,7 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
     service = SearchService(widget.dio);
     lang = findLangByName(widget.langName);
     _searchSubject
-        .debounceTime(Duration(milliseconds: 500))
+        .debounceTime(const Duration(milliseconds: 500))
         .where((e) => key.currentState != null)
         .where((event) => event.isNotEmpty)
         .listen((event) {
@@ -71,7 +71,7 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
               builder: (context, snapshot) {
                 var text = snapshot.data;
                 if (text != null && text.isNotEmpty) {
-                  return SizedBox.shrink();
+                  return const SizedBox.shrink();
                 }
                 return createHeader(context);
               }),
@@ -88,7 +88,7 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
                       .listen(Navigator.of(context).pop);
                 },
               ),
-              noDataWidget: SizedBox.shrink(),
+              noDataWidget: const SizedBox.shrink(),
             ),
           ),
         ],
@@ -135,7 +135,7 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
           var __searching = snapshot.data ?? false;
           if (__searching) {
             return IconButton(
-              icon: Icon(Icons.clear),
+              icon: const Icon(Icons.clear),
               onPressed: () {
                 _searchSubject.add("");
                 _searching.add(false);
@@ -143,7 +143,7 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
             );
           } else {
             return IconButton(
-              icon: Icon(Icons.search),
+              icon: const Icon(Icons.search),
               onPressed: () => _searching.add(true),
             );
           }
@@ -166,7 +166,7 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
                   Navigator.of(context)
                       .push<LatLng>(
                         MaterialPageRoute(
-                          builder: (context) => ChooseOnMapRoute(),
+                          builder: (context) => const ChooseOnMapRoute(),
                         ),
                       )
                       .asStream()
@@ -193,8 +193,8 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
                   padding: const EdgeInsets.all(8.0),
                   child: Column(
                     children: <Widget>[
-                      Icon(Icons.place),
-                      SizedBox(
+                      const Icon(Icons.place),
+                      const SizedBox(
                         height: 5,
                       ),
                       Text(lang.chooseOnMap.toUpperCase())
@@ -210,7 +210,7 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
               child: OutlinedButton(
                 onPressed: () async {
                   Geolocator.getCurrentPosition(
-                          timeLimit: Duration(seconds: 10))
+                          timeLimit: const Duration(seconds: 10))
                       .asStream()
                       .asyncMap((latLng) => service
                           .reverseGeocode([latLng.latitude, latLng.longitude]))
@@ -222,8 +222,8 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
                   padding: const EdgeInsets.all(8.0),
                   child: Column(
                     children: <Widget>[
-                      Icon(Icons.gps_fixed),
-                      SizedBox(
+                      const Icon(Icons.gps_fixed),
+                      const SizedBox(
                         height: 5,
                       ),
                       Text(lang.currentPosition.toUpperCase())

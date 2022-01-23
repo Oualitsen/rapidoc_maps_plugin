@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:rapidoc_maps_plugin/lang/langs.dart';
+import 'package:rxdart/rxdart.dart';
 
 class Maps extends StatefulWidget {
   final LatLng? initialPosition;
@@ -20,7 +21,7 @@ class Maps extends StatefulWidget {
   final Function()? onMapsReady;
   final String langName;
 
-  Maps({
+  const Maps({
     Key? key,
     this.initialPosition,
     this.polylines,
@@ -29,9 +30,9 @@ class Maps extends StatefulWidget {
     this.circles,
     this.onTap,
     this.cameraTargetBounds,
-    this.zoom: 0,
-    this.myLocationEnabled: false,
-    this.myLocationButtonEnabled: false,
+    this.zoom = 0,
+    this.myLocationEnabled = false,
+    this.myLocationButtonEnabled = false,
     this.onMapsReady,
     this.langName = "en",
   }) : super(key: key);
@@ -51,7 +52,7 @@ class MapsState extends State<Maps> {
   @override
   void initState() {
     lang = findLangByName(widget.langName);
-    center = widget.initialPosition ?? LatLng(0, 0);
+    center = widget.initialPosition ?? const LatLng(0, 0);
     super.initState();
   }
 
@@ -157,12 +158,12 @@ class MapsState extends State<Maps> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              SizedBox(
+              const SizedBox(
                 height: 30,
               ),
               Row(
                 children: <Widget>[
-                  SizedBox(width: 10),
+                  const SizedBox(width: 10),
                   Container(
                     color: Colors.white,
                     height: 50,
@@ -194,7 +195,7 @@ class MapsState extends State<Maps> {
                           ),
                         ),
                       ],
-                      child: Icon(Icons.more_horiz),
+                      child: const Icon(Icons.more_horiz),
                       onSelected: (type) {
                         setState(() {
                           mapType = type;
@@ -219,7 +220,7 @@ class MapsState extends State<Maps> {
                   child: Column(
                     children: <Widget>[
                       IconButton(
-                        icon: Icon(Icons.zoom_out),
+                        icon: const Icon(Icons.zoom_out),
                         onPressed: () async {
                           var ctrl = await _controller.future;
 
@@ -229,7 +230,7 @@ class MapsState extends State<Maps> {
                         },
                       ),
                       IconButton(
-                        icon: Icon(Icons.zoom_in),
+                        icon: const Icon(Icons.zoom_in),
                         onPressed: () async {
                           var ctrl = await _controller.future;
                           setState(() {
@@ -238,29 +239,26 @@ class MapsState extends State<Maps> {
                         },
                       ),
                       IconButton(
-                        icon: Icon(Icons.gps_fixed),
+                        icon: const Icon(Icons.gps_fixed),
                         onPressed: () async {
-                          try {
-                            var position = await Geolocator.getCurrentPosition(
+                          Rx.zip([
+                            Geolocator.getCurrentPosition(
                               desiredAccuracy: LocationAccuracy.medium,
-                              timeLimit: Duration(
-                                seconds: 7,
-                              ),
-                            );
-                            var ctrl = await _controller.future;
+                              timeLimit: const Duration(seconds: 7),
+                            ).asStream(),
+                            _controller.future.asStream(),
+                          ], (values) => values).listen((values) {
+                            var position = values[0] as Position;
+                            var ctrl = values[1] as GoogleMapController;
                             ctrl.animateCamera(CameraUpdate.newLatLng(
                                 LatLng(position.latitude, position.longitude)));
-                          } catch (error) {
-                            print("Could not get location! $error");
-                          }
+                          });
                         },
                       ),
                     ],
                   ),
                 ),
-                SizedBox(
-                  width: 10,
-                )
+                const SizedBox(width: 10)
               ],
             ),
           ),

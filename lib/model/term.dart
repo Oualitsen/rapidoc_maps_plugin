@@ -9,7 +9,7 @@ class Term {
 
   Term({
     this.value,
-    this.offset: 0,
+    this.offset = 0,
   });
 
   factory Term.fromJson(Map<String, dynamic> json) => _$TermFromJson(json);

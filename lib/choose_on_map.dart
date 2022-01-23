@@ -8,7 +8,7 @@ class ChooseOnMap extends StatefulWidget {
   final Function(LatLng?) onPlaceSelected;
   final LatLng? initialPosition;
   final String langName;
-  ChooseOnMap({
+  const ChooseOnMap({
     Key? key,
     required this.onPlaceSelected,
     this.initialPosition,
@@ -39,7 +39,7 @@ class _ChooseOnMapState extends State<ChooseOnMap> {
                 key: key,
                 initialPosition: widget.initialPosition,
               ),
-              Align(
+              const Align(
                 child: Icon(
                   Icons.place,
                   size: 48,
@@ -59,15 +59,13 @@ class _ChooseOnMapState extends State<ChooseOnMap> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
-                      Icon(Icons.clear),
-                      SizedBox(width: 10),
+                      const Icon(Icons.clear),
+                      const SizedBox(width: 10),
                       Text(lang.cancel)
                     ],
                   ),
                 ),
-                SizedBox(
-                  width: 10,
-                ),
+                const SizedBox(width: 10),
                 ElevatedButton(
                   onPressed: () {
                     if (key.currentState != null) {
@@ -77,10 +75,8 @@ class _ChooseOnMapState extends State<ChooseOnMap> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
-                      Icon(Icons.done),
-                      SizedBox(
-                        width: 10,
-                      ),
+                      const Icon(Icons.done),
+                      const SizedBox(width: 10),
                       Text(lang.selectThisPosition)
                     ],
                   ),

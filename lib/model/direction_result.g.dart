@@ -6,17 +6,16 @@ part of 'direction_result.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-DirectionResult _$DirectionResultFromJson(Map<String, dynamic> json) {
-  return DirectionResult()
-    ..geocodedWaypoints = (json['geocoded_waypoints'] as List<dynamic>?)
-        ?.map((e) => GeocodedWaypoint.fromJson(e as Map<String, dynamic>))
-        .toList()
-    ..status =
-        _$enumDecodeNullable(_$DirectionResultStatusEnumMap, json['status'])
-    ..routes = (json['routes'] as List<dynamic>?)
-        ?.map((e) => Route.fromJson(e as Map<String, dynamic>))
-        .toList();
-}
+DirectionResult _$DirectionResultFromJson(Map<String, dynamic> json) =>
+    DirectionResult()
+      ..geocodedWaypoints = (json['geocoded_waypoints'] as List<dynamic>?)
+          ?.map((e) => GeocodedWaypoint.fromJson(e as Map<String, dynamic>))
+          .toList()
+      ..status =
+          $enumDecodeNullable(_$DirectionResultStatusEnumMap, json['status'])
+      ..routes = (json['routes'] as List<dynamic>?)
+          ?.map((e) => Route.fromJson(e as Map<String, dynamic>))
+          .toList();
 
 Map<String, dynamic> _$DirectionResultToJson(DirectionResult instance) =>
     <String, dynamic>{
@@ -24,43 +23,6 @@ Map<String, dynamic> _$DirectionResultToJson(DirectionResult instance) =>
       'status': _$DirectionResultStatusEnumMap[instance.status],
       'routes': instance.routes,
     };
-
-K _$enumDecode<K, V>(
-  Map<K, V> enumValues,
-  Object? source, {
-  K? unknownValue,
-}) {
-  if (source == null) {
-    throw ArgumentError(
-      'A value must be provided. Supported values: '
-      '${enumValues.values.join(', ')}',
-    );
-  }
-
-  return enumValues.entries.singleWhere(
-    (e) => e.value == source,
-    orElse: () {
-      if (unknownValue == null) {
-        throw ArgumentError(
-          '`$source` is not one of the supported values: '
-          '${enumValues.values.join(', ')}',
-        );
-      }
-      return MapEntry(unknownValue, enumValues.values.first);
-    },
-  ).key;
-}
-
-K? _$enumDecodeNullable<K, V>(
-  Map<K, V> enumValues,
-  dynamic source, {
-  K? unknownValue,
-}) {
-  if (source == null) {
-    return null;
-  }
-  return _$enumDecode<K, V>(enumValues, source, unknownValue: unknownValue);
-}
 
 const _$DirectionResultStatusEnumMap = {
   DirectionResultStatus.OK: 'OK',
