@@ -6,26 +6,24 @@ part of 'step.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Step _$StepFromJson(Map<String, dynamic> json) {
-  return Step()
-    ..distance = json['distance'] == null
-        ? null
-        : TextValue.fromJson(json['distance'] as Map<String, dynamic>)
-    ..duration = json['duration'] == null
-        ? null
-        : TextValue.fromJson(json['duration'] as Map<String, dynamic>)
-    ..startLocation = json['start_location'] == null
-        ? null
-        : LatLng.fromJson(json['start_location'] as Map<String, dynamic>)
-    ..endLocation = json['end_location'] == null
-        ? null
-        : LatLng.fromJson(json['end_location'] as Map<String, dynamic>)
-    ..polyline = json['polyline'] == null
-        ? null
-        : Polyline.fromJson(json['polyline'] as Map<String, dynamic>)
-    ..htmlInstructions = json['html_instructions'] as String?
-    ..travelMode = json['travel_mode'] as String?;
-}
+Step _$StepFromJson(Map<String, dynamic> json) => Step()
+  ..distance = json['distance'] == null
+      ? null
+      : TextValue.fromJson(json['distance'] as Map<String, dynamic>)
+  ..duration = json['duration'] == null
+      ? null
+      : TextValue.fromJson(json['duration'] as Map<String, dynamic>)
+  ..startLocation = json['start_location'] == null
+      ? null
+      : LatLng.fromJson(json['start_location'] as Map<String, dynamic>)
+  ..endLocation = json['end_location'] == null
+      ? null
+      : LatLng.fromJson(json['end_location'] as Map<String, dynamic>)
+  ..polyline = json['polyline'] == null
+      ? null
+      : Polyline.fromJson(json['polyline'] as Map<String, dynamic>)
+  ..htmlInstructions = json['html_instructions'] as String?
+  ..travelMode = json['travel_mode'] as String?;
 
 Map<String, dynamic> _$StepToJson(Step instance) => <String, dynamic>{
       'distance': instance.distance,
