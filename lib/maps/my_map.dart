@@ -20,6 +20,12 @@ class Maps extends StatefulWidget {
   final bool myLocationButtonEnabled;
   final Function()? onMapsReady;
   final String langName;
+  final void Function()? onCameraIdle;
+  final void Function()? onCameraMoveStarted;
+  final void Function(CameraPosition position)? onCameraMove;
+  final bool showZoomIn;
+  final bool showZoomOut;
+  final bool showCurrentPosition;
 
   const Maps({
     Key? key,
@@ -35,6 +41,12 @@ class Maps extends StatefulWidget {
     this.myLocationButtonEnabled = false,
     this.onMapsReady,
     this.langName = "en",
+    this.onCameraIdle,
+    this.onCameraMoveStarted,
+    this.onCameraMove,
+    this.showZoomIn = true,
+    this.showZoomOut = true,
+    this.showCurrentPosition = true,
   }) : super(key: key);
 
   @override
@@ -134,7 +146,16 @@ class MapsState extends State<Maps> {
               widget.onMapsReady!();
             }
           },
-          onCameraIdle: () {},
+          onCameraIdle: () {
+            if (widget.onCameraIdle != null) {
+              widget.onCameraIdle!();
+            }
+          },
+          onCameraMoveStarted: () {
+            if (widget.onCameraMoveStarted != null) {
+              widget.onCameraMoveStarted!();
+            }
+          },
           initialCameraPosition: CameraPosition(
               target: LatLng(center.latitude, center.longitude),
               zoom: widget.zoom),
@@ -142,6 +163,9 @@ class MapsState extends State<Maps> {
           onCameraMove: (CameraPosition position) {
             center =
                 LatLng(position.target.latitude, position.target.longitude);
+            if (widget.onCameraMove != null) {
+              widget.onCameraMove!(position);
+            }
           },
           markers: Set.of(widget.markers ?? []),
           polygons: Set.of(widget.polygons ?? []),
@@ -165,7 +189,7 @@ class MapsState extends State<Maps> {
                 children: <Widget>[
                   const SizedBox(width: 10),
                   Container(
-                    color: Colors.white,
+                    color: Theme.of(context).cardColor,
                     height: 50,
                     width: 50,
                     child: PopupMenuButton<MapType>(
@@ -215,49 +239,55 @@ class MapsState extends State<Maps> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Container(
-                  color: Colors.white,
-                  child: Column(
-                    children: <Widget>[
-                      IconButton(
-                        icon: const Icon(Icons.zoom_out),
-                        onPressed: () async {
-                          var ctrl = await _controller.future;
-
-                          setState(() {
-                            ctrl.animateCamera(CameraUpdate.zoomOut());
-                          });
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.zoom_in),
-                        onPressed: () async {
-                          var ctrl = await _controller.future;
-                          setState(() {
-                            ctrl.animateCamera(CameraUpdate.zoomIn());
-                          });
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.gps_fixed),
-                        onPressed: () async {
-                          Rx.zip([
-                            Geolocator.getCurrentPosition(
-                              desiredAccuracy: LocationAccuracy.medium,
-                              timeLimit: const Duration(seconds: 7),
-                            ).asStream(),
-                            _controller.future.asStream(),
-                          ], (values) => values).listen((values) {
-                            var position = values[0] as Position;
-                            var ctrl = values[1] as GoogleMapController;
-                            ctrl.animateCamera(CameraUpdate.newLatLng(
-                                LatLng(position.latitude, position.longitude)));
-                          });
-                        },
-                      ),
-                    ],
+                if (widget.showZoomOut ||
+                    widget.showZoomIn ||
+                    widget.showCurrentPosition)
+                  Container(
+                    color: Theme.of(context).cardColor,
+                    child: Column(
+                      children: <Widget>[
+                        if (widget.showZoomOut)
+                          IconButton(
+                            icon: const Icon(Icons.zoom_out),
+                            onPressed: () async {
+                              var ctrl = await _controller.future;
+                              setState(() {
+                                ctrl.animateCamera(CameraUpdate.zoomOut());
+                              });
+                            },
+                          ),
+                        if (widget.showZoomIn)
+                          IconButton(
+                            icon: const Icon(Icons.zoom_in),
+                            onPressed: () async {
+                              var ctrl = await _controller.future;
+                              setState(() {
+                                ctrl.animateCamera(CameraUpdate.zoomIn());
+                              });
+                            },
+                          ),
+                        if (widget.showCurrentPosition)
+                          IconButton(
+                            icon: const Icon(Icons.gps_fixed),
+                            onPressed: () async {
+                              Rx.zip([
+                                Geolocator.getCurrentPosition(
+                                  desiredAccuracy: LocationAccuracy.medium,
+                                  timeLimit: const Duration(seconds: 7),
+                                ).asStream(),
+                                _controller.future.asStream(),
+                              ], (values) => values).listen((values) {
+                                var position = values[0] as Position;
+                                var ctrl = values[1] as GoogleMapController;
+                                ctrl.animateCamera(CameraUpdate.newLatLng(
+                                    LatLng(position.latitude,
+                                        position.longitude)));
+                              });
+                            },
+                          ),
+                      ],
+                    ),
                   ),
-                ),
                 const SizedBox(width: 10)
               ],
             ),
@@ -266,4 +296,6 @@ class MapsState extends State<Maps> {
       ],
     );
   }
+
+  Completer<GoogleMapController> get controller => _controller;
 }

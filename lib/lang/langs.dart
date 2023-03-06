@@ -37,11 +37,11 @@ class _French extends Lang {
   @override
   String get cancel => "Annuler";
   @override
-  String get search => "Recherche";
+  String get search => "Recherche adresse";
   @override
-  String get chooseOnMap => "Choisir sur carte";
+  String get chooseOnMap => "Choisir dans la map";
   @override
-  String get currentPosition => "Position actuelle";
+  String get currentPosition => "Ma position";
   @override
   String get selectThisPosition => "Choisir cette position";
 }

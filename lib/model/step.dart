@@ -1,6 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'package:rapidoc_maps_plugin/model/text_value.dart';
-import 'package:rapidoc_maps_plugin/model/lat_lng.dart';
+import 'package:rapidoc_maps_plugin/model/coords.dart';
 import 'package:rapidoc_maps_plugin/model/polyline.dart';
 
 part 'step.g.dart';
@@ -10,10 +10,10 @@ class Step {
   TextValue? distance;
   TextValue? duration;
   @JsonKey(name: "start_location")
-  LatLng? startLocation;
+  Coords? startLocation;
 
   @JsonKey(name: "end_location")
-  LatLng? endLocation;
+  Coords? endLocation;
 
   Polyline? polyline;
 

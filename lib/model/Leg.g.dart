@@ -17,10 +17,10 @@ Leg _$LegFromJson(Map<String, dynamic> json) => Leg()
   ..endAddress = json['end_address'] as String?
   ..startLocation = json['start_location'] == null
       ? null
-      : LatLng.fromJson(json['start_location'] as Map<String, dynamic>)
+      : Coords.fromJson(json['start_location'] as Map<String, dynamic>)
   ..endLocation = json['end_location'] == null
       ? null
-      : LatLng.fromJson(json['end_location'] as Map<String, dynamic>)
+      : Coords.fromJson(json['end_location'] as Map<String, dynamic>)
   ..steps = (json['steps'] as List<dynamic>?)
       ?.map((e) => Step.fromJson(e as Map<String, dynamic>))
       .toList();

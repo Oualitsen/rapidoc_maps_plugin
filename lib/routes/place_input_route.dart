@@ -4,7 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http_error_handler/error_handler.dart';
 import 'package:infinite_scroll_list_view/infinite_scroll_list_view.dart';
-import 'package:rapidoc_maps_plugin/model/lat_lng.dart' as model;
+import 'package:rapidoc_maps_plugin/model/coords.dart' as model;
 import 'package:rapidoc_maps_plugin/model/prediction.dart';
 import 'package:flutter/material.dart';
 import 'package:rapidoc_maps_plugin/lang/langs.dart';
@@ -18,13 +18,17 @@ class PlaceInputRoute extends StatefulWidget {
 
   /// something like country:dz
   final String? component;
+  final LatLng? chooseOnMapInitialPosition;
+  final double zoom;
 
-  const PlaceInputRoute({
-    Key? key,
-    required this.dio,
-    this.langName = "en",
-    this.component,
-  }) : super(key: key);
+  const PlaceInputRoute(
+      {Key? key,
+      required this.dio,
+      this.langName = "en",
+      this.component,
+      this.zoom = 10,
+      this.chooseOnMapInitialPosition})
+      : super(key: key);
 
   @override
   State<StatefulWidget> createState() => PlaceInputRouteState();
@@ -162,42 +166,17 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
             child: Padding(
               padding: const EdgeInsets.all(8.0),
               child: OutlinedButton(
-                onPressed: () {
-                  Navigator.of(context)
-                      .push<LatLng>(
-                        MaterialPageRoute(
-                          builder: (context) => const ChooseOnMapRoute(),
-                        ),
-                      )
-                      .asStream()
-                      .where((event) => event != null)
-                      .map((event) => event!)
-                      .flatMap(
-                        (latLng) => service
-                            .reverseGeocode([latLng.latitude, latLng.longitude])
-                            .asStream()
-                            .map(
-                              (address) => Position(
-                                latLng: model.LatLng(
-                                    lat: latLng.latitude,
-                                    lng: latLng.longitude),
-                                formattedAddress: address,
-                              ),
-                            ),
-                      )
-                      .doOnError(
-                          (p0, p1) => showServerError(context, error: p0))
-                      .listen(Navigator.of(context).pop);
-                },
+                onPressed: _chooseOnMap,
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Column(
                     children: <Widget>[
                       const Icon(Icons.place),
-                      const SizedBox(
-                        height: 5,
-                      ),
-                      Text(lang.chooseOnMap.toUpperCase())
+                      const SizedBox(height: 5),
+                      Text(
+                        lang.chooseOnMap.toUpperCase(),
+                        textAlign: TextAlign.center,
+                      )
                     ],
                   ),
                 ),
@@ -208,16 +187,7 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
             child: Padding(
               padding: const EdgeInsets.all(8.0),
               child: OutlinedButton(
-                onPressed: () async {
-                  Geolocator.getCurrentPosition(
-                          timeLimit: const Duration(seconds: 10))
-                      .asStream()
-                      .asyncMap((latLng) => service
-                          .reverseGeocode([latLng.latitude, latLng.longitude]))
-                      .doOnError(
-                          (p0, p1) => showServerError(context, error: p0))
-                      .listen((text) => Navigator.of(context).pop(text));
-                },
+                onPressed: _currentPosition,
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Column(
@@ -226,7 +196,10 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
                       const SizedBox(
                         height: 5,
                       ),
-                      Text(lang.currentPosition.toUpperCase())
+                      Text(
+                        lang.currentPosition.toUpperCase(),
+                        textAlign: TextAlign.center,
+                      )
                     ],
                   ),
                 ),
@@ -236,6 +209,57 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
         ],
       ),
     );
+  }
+
+  void _currentPosition() {
+    Geolocator.requestPermission()
+        .asStream()
+        .where([
+          LocationPermission.whileInUse,
+          LocationPermission.always,
+        ].contains)
+        .flatMap((value) => Geolocator.getCurrentPosition(
+                timeLimit: const Duration(seconds: 20))
+            .asStream())
+        .asyncMap((latLng) => service
+            .reverseGeocode([latLng.latitude, latLng.longitude])
+            .asStream()
+            .map((event) => Position(
+                latLng:
+                    model.Coords(lat: latLng.latitude, lng: latLng.longitude),
+                formattedAddress: event))
+            .first)
+        .doOnError((p0, p1) => showServerError(context, error: p0))
+        .listen((text) => Navigator.of(context).pop(text));
+  }
+
+  void _chooseOnMap() {
+    Navigator.of(context)
+        .push<LatLng>(
+          MaterialPageRoute(
+            builder: (context) => ChooseOnMapRoute(
+              zoom: widget.zoom,
+              initial: widget.chooseOnMapInitialPosition,
+            ),
+          ),
+        )
+        .asStream()
+        .where((event) => event != null)
+        .map((event) => event!)
+        .flatMap(
+          (latLng) => service
+              .reverseGeocode([latLng.latitude, latLng.longitude])
+              .asStream()
+              .map(
+                (address) => Position(
+                  latLng:
+                      model.Coords(lat: latLng.latitude, lng: latLng.longitude),
+                  formattedAddress: address,
+                ),
+              ),
+        )
+        .doOnError((p0, p1) => showServerError(context, error: p0))
+        .listen(Navigator.of(context).pop);
   }
 
   @override
@@ -258,7 +282,7 @@ class PlaceInputRouteState extends State<PlaceInputRoute> {
 }
 
 class Position {
-  final model.LatLng latLng;
+  final model.Coords latLng;
   final String formattedAddress;
 
   Position({required this.latLng, required this.formattedAddress});

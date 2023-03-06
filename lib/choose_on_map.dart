@@ -8,12 +8,14 @@ class ChooseOnMap extends StatefulWidget {
   final Function(LatLng?) onPlaceSelected;
   final LatLng? initialPosition;
   final String langName;
-  const ChooseOnMap({
-    Key? key,
-    required this.onPlaceSelected,
-    this.initialPosition,
-    this.langName = "en",
-  }) : super(key: key);
+  final double zoom;
+  const ChooseOnMap(
+      {Key? key,
+      required this.onPlaceSelected,
+      this.initialPosition,
+      this.langName = "en",
+      this.zoom = 10})
+      : super(key: key);
 
   @override
   _ChooseOnMapState createState() => _ChooseOnMapState();
@@ -38,6 +40,7 @@ class _ChooseOnMapState extends State<ChooseOnMap> {
               Maps(
                 key: key,
                 initialPosition: widget.initialPosition,
+                zoom: widget.zoom,
               ),
               const Align(
                 child: Icon(

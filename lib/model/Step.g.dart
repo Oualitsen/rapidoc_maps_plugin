@@ -15,10 +15,10 @@ Step _$StepFromJson(Map<String, dynamic> json) => Step()
       : TextValue.fromJson(json['duration'] as Map<String, dynamic>)
   ..startLocation = json['start_location'] == null
       ? null
-      : LatLng.fromJson(json['start_location'] as Map<String, dynamic>)
+      : Coords.fromJson(json['start_location'] as Map<String, dynamic>)
   ..endLocation = json['end_location'] == null
       ? null
-      : LatLng.fromJson(json['end_location'] as Map<String, dynamic>)
+      : Coords.fromJson(json['end_location'] as Map<String, dynamic>)
   ..polyline = json['polyline'] == null
       ? null
       : Polyline.fromJson(json['polyline'] as Map<String, dynamic>)

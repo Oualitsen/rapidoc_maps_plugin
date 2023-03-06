@@ -5,7 +5,11 @@ import 'package:rapidoc_maps_plugin/lang/langs.dart';
 
 class ChooseOnMapRoute extends StatelessWidget {
   final String langName;
-  const ChooseOnMapRoute({Key? key, this.langName = "en"}) : super(key: key);
+  final LatLng? initial;
+  final double zoom;
+  const ChooseOnMapRoute(
+      {Key? key, this.langName = "en", this.initial, this.zoom = 10})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +19,8 @@ class ChooseOnMapRoute extends StatelessWidget {
         title: Text(lang.chooseOnMap),
       ),
       body: ChooseOnMap(
-        initialPosition: ModalRoute.of(context)?.settings.arguments as LatLng?,
+        initialPosition: initial,
+        zoom: zoom,
         onPlaceSelected: (s) => Navigator.of(context).pop(s),
       ),
     );

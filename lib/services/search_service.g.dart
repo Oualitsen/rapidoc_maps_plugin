@@ -6,6 +6,8 @@ part of 'search_service.dart';
 // RetrofitGenerator
 // **************************************************************************
 
+// ignore_for_file: unnecessary_brace_in_string_interps
+
 class _SearchService implements SearchService {
   _SearchService(this._dio, {this.baseUrl});
 
@@ -36,19 +38,19 @@ class _SearchService implements SearchService {
   }
 
   @override
-  Future<LatLng> geocode(placeId, {lang}) async {
+  Future<Coords> geocode(placeId, {lang}) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{r'lang': lang};
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     final _result = await _dio.fetch<Map<String, dynamic>>(
-        _setStreamType<LatLng>(
+        _setStreamType<Coords>(
             Options(method: 'GET', headers: _headers, extra: _extra)
-                .compose(_dio.options, '/maps/places/get-place/$placeId',
+                .compose(_dio.options, '/maps/places/get-place/${placeId}',
                     queryParameters: queryParameters, data: _data)
                 .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
-    final value = LatLng.fromJson(_result.data!);
+    final value = Coords.fromJson(_result.data!);
     return value;
   }
 

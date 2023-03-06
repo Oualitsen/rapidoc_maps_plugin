@@ -1,7 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'package:rapidoc_maps_plugin/model/step.dart';
 import 'package:rapidoc_maps_plugin/model/text_value.dart';
-import 'package:rapidoc_maps_plugin/model/lat_lng.dart';
+import 'package:rapidoc_maps_plugin/model/coords.dart';
 part 'leg.g.dart';
 
 @JsonSerializable()
@@ -16,10 +16,10 @@ class Leg {
   String? endAddress;
 
   @JsonKey(name: "start_location")
-  LatLng? startLocation;
+  Coords? startLocation;
 
   @JsonKey(name: "end_location")
-  LatLng? endLocation;
+  Coords? endLocation;
 
   List<Step>? steps;
 

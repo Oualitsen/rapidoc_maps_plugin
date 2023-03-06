@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:rapidoc_maps_plugin/model/lat_lng.dart';
+import 'package:rapidoc_maps_plugin/model/coords.dart';
 import 'package:rapidoc_maps_plugin/model/prediction.dart';
 import 'package:retrofit/retrofit.dart';
 part 'search_service.g.dart';
@@ -16,7 +16,7 @@ abstract class SearchService {
   });
 
   @GET("/maps/places/get-place/{placeId}")
-  Future<LatLng> geocode(@Path("placeId") String placeId,
+  Future<Coords> geocode(@Path("placeId") String placeId,
       {@Query("lang") String? lang});
 
   @POST("/maps/places/reverse-geocode")
